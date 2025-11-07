@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LaOriginalBackend.Controllers.Mantenimientos
 {
-    [Authorize(Roles = "Administrador,Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class EstadosController : ControllerBase

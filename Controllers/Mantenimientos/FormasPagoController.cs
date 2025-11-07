@@ -68,7 +68,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // POST: api/formaspago
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpPost]
         public async Task<ActionResult<FormaPagoListDto>> Create([FromBody] FormaPagoCreateDto dto)
         {
@@ -108,7 +107,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // PUT: api/formaspago/5
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] FormaPagoUpdateDto dto)
         {
@@ -134,7 +132,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // PATCH: api/formaspago/5/estado
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpPatch("{id:int}/estado")]
         public async Task<IActionResult> Toggle(int id, [FromBody] FormaPagoToggleDto dto)
         {
@@ -148,7 +145,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // DELETE: api/formaspago/5
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

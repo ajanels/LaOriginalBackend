@@ -93,7 +93,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // PUT: api/colores/5
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] ColorUpdateDto dto)
         {
@@ -116,7 +115,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // PATCH: api/colores/5/estado
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpPatch("{id:int}/estado")]
         public async Task<IActionResult> Toggle(int id, [FromBody] ColorToggleDto dto)
         {
@@ -130,7 +128,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // DELETE: api/colores/5
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

@@ -123,7 +123,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // DELETE: api/categorias/5
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

@@ -122,7 +122,6 @@ namespace LaOriginalBackend.Controllers.Compras
         }
 
         // ===== CREAR =====
-        [Authorize(Roles = "Administrador,Admin,Compras")]
         [HttpPost]
         public async Task<ActionResult> Create([FromBody] CompraCreateDto dto, CancellationToken ct = default)
         {
@@ -290,7 +289,6 @@ namespace LaOriginalBackend.Controllers.Compras
         }
 
         // ===== ANULAR =====
-        [Authorize(Roles = "Administrador,Admin,Compras")]
         [HttpPost("{id:int}/anular")]
         public async Task<ActionResult> Anular(int id, [FromBody] CompraAnularDto dto, CancellationToken ct = default)
         {

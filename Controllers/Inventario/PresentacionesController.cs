@@ -50,7 +50,6 @@ public class PresentacionesController : ControllerBase
     }
 
     // POST: api/productos/5/presentaciones
-    [Authorize(Roles = "Administrador,Admin")]
     [HttpPost("productos/{productoId:int}/presentaciones")]
     public async Task<ActionResult<PresentacionListDto>> Create(int productoId, [FromBody] PresentacionCreateDto dto)
     {
@@ -171,7 +170,6 @@ public class PresentacionesController : ControllerBase
     }
 
     // PUT: api/presentaciones/123
-    [Authorize(Roles = "Administrador,Admin")]
     [HttpPut("presentaciones/{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] PresentacionUpdateDto dto)
     {
@@ -228,7 +226,6 @@ public class PresentacionesController : ControllerBase
     }
 
     // PATCH: api/presentaciones/123/estado
-    [Authorize(Roles = "Administrador,Admin")]
     [HttpPatch("presentaciones/{id:int}/estado")]
     public async Task<IActionResult> Toggle(int id, [FromBody] PresentacionToggleDto dto)
     {
@@ -242,7 +239,6 @@ public class PresentacionesController : ControllerBase
     }
 
     // PATCH: api/presentaciones/123/principal
-    [Authorize(Roles = "Administrador,Admin")]
     [HttpPatch("presentaciones/{id:int}/principal")]
     public async Task<IActionResult> SetPrincipal(int id)
     {
@@ -267,7 +263,6 @@ public class PresentacionesController : ControllerBase
     }
 
     // DELETE: api/presentaciones/123
-    [Authorize(Roles = "Administrador,Admin")]
     [HttpDelete("presentaciones/{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

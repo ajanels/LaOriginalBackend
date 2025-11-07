@@ -117,7 +117,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // PUT: api/proveedores/5
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] ProveedorUpdateDto dto)
         {
@@ -151,7 +150,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // PATCH: api/proveedores/5/estado
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpPatch("{id:int}/estado")]
         public async Task<IActionResult> Toggle(int id, [FromBody] ProveedorToggleDto dto)
         {
@@ -165,7 +163,6 @@ namespace LaOriginalBackend.Controllers.Mantenimientos
         }
 
         // DELETE: api/proveedores/5
-        [Authorize(Roles = "Administrador,Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
