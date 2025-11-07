@@ -7,18 +7,87 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LaOriginalBackend", "LaOrig
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Models", "Models", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
+		Categoria.cs = Categoria.cs
+		Cliente.cs = Cliente.cs
+		Color.cs = Color.cs
+		Compra.cs = Compra.cs
+		CompraDetalle.cs = CompraDetalle.cs
+		DevolucionCompra.cs = DevolucionCompra.cs
+		DevolucionVenta.cs = DevolucionVenta.cs
+		Estado.cs = Estado.cs
+		FormaPago.cs = FormaPago.cs
+		Marca.cs = Marca.cs
+		MovimientoInventario.cs = MovimientoInventario.cs
+		PedidoCliente.cs = PedidoCliente.cs
+		PedidoClientePago.cs = PedidoClientePago.cs
+		PedidoProveedor.cs = PedidoProveedor.cs
+		PedidoProveedorDetalle.cs = PedidoProveedorDetalle.cs
+		Presentacion.cs = Presentacion.cs
+		Producto.cs = Producto.cs
+		ProductoStock.cs = ProductoStock.cs
+		Proveedor.cs = Proveedor.cs
+		ProveedorPresentacion.cs = ProveedorPresentacion.cs
+		Rol.cs = Rol.cs
+		TipoPedidoCliente.cs = TipoPedidoCliente.cs
+		UnidadMedida.cs = UnidadMedida.cs
 		Usuario.cs = Usuario.cs
+		Venta.cs = Venta.cs
+		VentaDetalle.cs = VentaDetalle.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{C6D7DB9E-7D41-4BB6-89D1-B3DCCD9AF902}"
 	ProjectSection(SolutionItems) = preProject
+		CajaDomainService.cs = CajaDomainService.cs
+		CajaExceptions.cs = CajaExceptions.cs
 		EmailService.cs = EmailService.cs
+		ICajaDomainService.cs = ICajaDomainService.cs
 		PasswordHelper.cs = PasswordHelper.cs
+		VentasService.cs = VentasService.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{AECD1858-CD1C-4B10-9683-DCF1609CE1FD}"
 	ProjectSection(SolutionItems) = preProject
 		AppDbContext.cs = AppDbContext.cs
+		DbSeeder.cs = DbSeeder.cs
+		ModelBuilderExtensions.Caja.cs = ModelBuilderExtensions.Caja.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dtos", "Dtos", "{CF5A7046-A05E-4669-87F9-90D1860BF2C7}"
+	ProjectSection(SolutionItems) = preProject
+		CajaDtos.cs = CajaDtos.cs
+		CategoriaDtos.cs = CategoriaDtos.cs
+		ClienteDtos.cs = ClienteDtos.cs
+		ColorDtos.cs = ColorDtos.cs
+		ComprasDtos.cs = ComprasDtos.cs
+		DevolucionCompraDtos.cs = DevolucionCompraDtos.cs
+		DevolucionVentaDtos.cs = DevolucionVentaDtos.cs
+		EstadoDtos.cs = EstadoDtos.cs
+		FormaPagoDtos.cs = FormaPagoDtos.cs
+		InventarioDtos.cs = InventarioDtos.cs
+		MarcaDtos.cs = MarcaDtos.cs
+		MinimoDto.cs = MinimoDto.cs
+		PedidosClientesDtos.cs = PedidosClientesDtos.cs
+		PedidosProveedoresDtos.cs = PedidosProveedoresDtos.cs
+		PresentacionDtos.cs = PresentacionDtos.cs
+		ProductoDtos.cs = ProductoDtos.cs
+		ProductoPreciosDefaultUpdateDto.cs = ProductoPreciosDefaultUpdateDto.cs
+		ProveedorCatalogoDtos.cs = ProveedorCatalogoDtos.cs
+		ProveedorDtos.cs = ProveedorDtos.cs
+		ReportesDtos.cs = ReportesDtos.cs
+		RolDtos.cs = RolDtos.cs
+		UnidadMedidaDtos.cs = UnidadMedidaDtos.cs
+		UsuarioDtos.cs = UsuarioDtos.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ventas", "Ventas", "{A211FCD7-B392-41EA-A8E2-2B094B84E56A}"
+	ProjectSection(SolutionItems) = preProject
+		VentaDtos.cs = VentaDtos.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "caja", "caja", "{37071056-C303-48AA-A46F-B312E902E3A7}"
+	ProjectSection(SolutionItems) = preProject
+		CajaApertura.cs = CajaApertura.cs
+		CajaMovimiento.cs = CajaMovimiento.cs
 	EndProjectSection
 EndProject
 Global
@@ -34,6 +103,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A211FCD7-B392-41EA-A8E2-2B094B84E56A} = {CF5A7046-A05E-4669-87F9-90D1860BF2C7}
+		{37071056-C303-48AA-A46F-B312E902E3A7} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BF9662DB-BE23-4D95-8847-D0FF810B2915}
