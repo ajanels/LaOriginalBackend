@@ -1,0 +1,101 @@
+# ============= OS / Misceláneo =============
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# ============= IDE / Editores =============
+.vscode/
+.idea/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+*.ncrunch*
+_*.ncrunchproject
+*.iml
+*.ipr
+*.iws
+
+# ============= .NET / Visual Studio =============
+[Bb]in/
+[Oo]bj/
+[Aa]rtifacts/
+[Ll]ogs/
+*.log
+TestResults/
+*.coverage*
+*.coveragexml
+*.pidb
+*.svclog
+*.scc
+Generated\ Files/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/*
+!packages/build/
+.nuget/
+
+# Publicaciones / perfiles
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]ppx/
+[Aa]ppPackages/
+[Aa]ppPublish/
+*.pubxml.user
+
+# ASP.NET estático (LibMan)
+wwwroot/lib/
+
+# ============= Config/Secretos backend =============
+appsettings.*.local.json
+appsettings.Local.json
+secrets.json
+
+# ============= Frontend Angular =============
+# (genérico por si el workspace está en la raíz)
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.env
+.env.*
+
+# (si tu frontend vive en carpeta LaOriginalFrontend/)
+LaOriginalFrontend/node_modules/
+LaOriginalFrontend/dist/
+LaOriginalFrontend/.angular/
+LaOriginalFrontend/.cache/
+LaOriginalFrontend/npm-debug.log*
+LaOriginalFrontend/yarn*.log*
+LaOriginalFrontend/pnpm-debug.log*
+LaOriginalFrontend/.env
+LaOriginalFrontend/.env.*
+
+# Cobertura / Playwright
+coverage/
+.playwright/
+test-results/
+playwright-report/
+
+# ============= Archivos de ejecución / subidas =============
+wwwroot/uploads/
+Uploads/
+storage/
+temp/
+tmp/
