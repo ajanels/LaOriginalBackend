@@ -1,33 +1,30 @@
-﻿using LaOriginalBackend.Data;
+﻿using System.Globalization;
+using System.Text;
+using LaOriginalBackend.Data;
 using LaOriginalBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =======================
-// DB
-// =======================
+// ======================= DB =======================
 builder.Services.AddDbContext<AppDbContext>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// =======================
-// Servicios / Controllers
-// =======================
+// ======================= Servicios / Controllers =======================
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddScoped<IVentasService, VentasService>();
 builder.Services.AddScoped<ICajaDomainService, CajaDomainService>();
 
-// Aumentar límites de multipart (por si suben fotos grandes)
+// Subidas grandes
 builder.Services.Configure<FormOptions>(o =>
 {
     o.MultipartBodyLengthLimit = long.MaxValue;
@@ -35,9 +32,7 @@ builder.Services.Configure<FormOptions>(o =>
     o.MultipartHeadersLengthLimit = int.MaxValue;
 });
 
-// =======================
-// JWT
-// =======================
+// ======================= JWT =======================
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "clave-secreta-super-segura-12345";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "LaOriginal";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "LaOriginalUsuarios";
@@ -45,7 +40,7 @@ var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "LaOriginalUsuarios";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
     {
-        o.RequireHttpsMetadata = false; // dev
+        o.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         o.SaveToken = true;
         o.TokenValidationParameters = new TokenValidationParameters
         {
@@ -62,21 +57,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// =======================
-// CORS
-// =======================
+// ======================= CORS =======================
+var webUrl = builder.Configuration["App:WebUrl"]?.TrimEnd('/');
+var allowedOrigins = new List<string> { "http://localhost:4200" };
+if (!string.IsNullOrWhiteSpace(webUrl)) allowedOrigins.Add(webUrl);
+
 builder.Services.AddCors(o =>
 {
     o.AddPolicy("AllowAngularClient", p =>
-        p.WithOrigins("http://localhost:4200") // agrega tu dominio productivo aquí
+        p.WithOrigins(allowedOrigins.Distinct().ToArray())
          .AllowAnyHeader()
          .AllowAnyMethod()
          .AllowCredentials());
 });
 
-// =======================
-// Swagger
-// =======================
+// ======================= Swagger =======================
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "LaOriginalBackend", Version = "v1" });
@@ -101,9 +96,10 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// =======================
-// Proxy/ALB (cloud)
-// =======================
+var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:Enabled");
+var swaggerRoutePrefix = builder.Configuration["Swagger:RoutePrefix"] ?? "swagger";
+
+// ======================= Proxy/ALB (cloud/IIS) =======================
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -113,31 +109,32 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
 
 // === SendGrid ===
 builder.Configuration.AddEnvironmentVariables();
-builder.Services.AddSingleton<EmailService>(); // lee SendGrid:* desde user-secrets / variables de entorno
+builder.Services.AddSingleton<EmailService>();
+
+// Cultura (decimal/fecha) — opcional
+CultureInfo.DefaultThreadCurrentCulture = new("es-GT");
+CultureInfo.DefaultThreadCurrentUICulture = new("es-GT");
 
 var app = builder.Build();
 
-// =======================
-// Rutas/archivos estáticos
-// =======================
+// ========== Forwarded headers ANTES que auth/cors ==========
+app.UseForwardedHeaders();
 
-// 1) wwwroot normal
+// ======================= Archivos estáticos =======================
+// 1) wwwroot
 app.UseStaticFiles();
 
-// 2) Carpeta externa para /uploads (evita reinicios por file-watcher)
+// 2) /uploads físico
 var uploadsRoot = builder.Configuration["Uploads:Root"];
-
-// Fallback SIEMPRE EXTERNO (nunca wwwroot/uploads)
 if (string.IsNullOrWhiteSpace(uploadsRoot))
 {
     uploadsRoot = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
         "LaOriginal", "uploads"
     );
 }
 Directory.CreateDirectory(uploadsRoot);
 
-// Content types extra (por si tu framework no mapea alguno)
 var contentTypeProvider = new FileExtensionContentTypeProvider();
 contentTypeProvider.Mappings[".webp"] = "image/webp";
 contentTypeProvider.Mappings[".avif"] = "image/avif";
@@ -150,34 +147,32 @@ app.UseStaticFiles(new StaticFileOptions
     ServeUnknownFileTypes = false
 });
 
-// =======================
-// Middlewares
-// =======================
+// ======================= Middlewares =======================
 app.UseCors("AllowAngularClient");
 
-if (app.Environment.IsDevelopment())
+// Habilitar Swagger en dev o cuando Swagger:Enabled=true en appsettings.Production.json
+if (app.Environment.IsDevelopment() || swaggerEnabled)
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
-
-    // Mantén estos puertos fijos si así lo usas en dev
-    app.Urls.Clear();
-    app.Urls.Add("http://localhost:5078");
-    app.Urls.Add("https://localhost:7140");
-}
-else
-{
-    // En AWS respeta X-Forwarded-* del balanceador
-    app.UseForwardedHeaders();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "LaOriginalBackend v1");
+        c.RoutePrefix = swaggerRoutePrefix; // típico: "swagger"
+    });
 }
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+// ======================= DB migrate + seed =======================
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    DbSeeder.SeedAsync(db).GetAwaiter().GetResult();
+}
 
-// Mensaje útil al iniciar
+app.MapControllers();
 app.Logger.LogInformation("Uploads sirviéndose desde: {UploadsRoot} => /uploads", uploadsRoot);
 
 app.Run();

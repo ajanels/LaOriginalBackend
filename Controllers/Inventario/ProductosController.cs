@@ -6,6 +6,7 @@ using LaOriginalBackend.Dtos;
 using LaOriginalBackend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration; // <-- para leer Uploads:Root
 
 namespace LaOriginalBackend.Controllers.Inventario
 {
@@ -15,11 +16,21 @@ namespace LaOriginalBackend.Controllers.Inventario
     {
         private readonly AppDbContext _db;
         private readonly IWebHostEnvironment _env;
+        private readonly string _uploadsRoot; // <-- base externa para /uploads
 
-        public ProductosController(AppDbContext db, IWebHostEnvironment env)
+        public ProductosController(AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
         {
             _db = db;
             _env = env;
+
+            // Debe coincidir con el fallback de Program.cs
+            var configured = cfg["Uploads:Root"];
+            _uploadsRoot = !string.IsNullOrWhiteSpace(configured)
+                ? configured
+                : Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "LaOriginal", "uploads"
+                  );
         }
 
         // ===== LISTA =====
@@ -65,7 +76,7 @@ namespace LaOriginalBackend.Controllers.Inventario
             return Ok(list);
         }
 
-        // ===== DETALLE (prellenado básico: proveedor + precios de la presentación principal) =====
+        // ===== DETALLE =====
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ProductoDetailDto>> GetById(int id)
         {
@@ -108,7 +119,7 @@ namespace LaOriginalBackend.Controllers.Inventario
             return Ok(dto);
         }
 
-        // ===== CREAR: Producto + Presentación principal + Proveedor + Código correlativo =====
+        // ===== CREAR =====
         [HttpPost]
         public async Task<ActionResult<ProductoDetailDto>> Create([FromBody] ProductoCreateDto dto)
         {
@@ -121,7 +132,6 @@ namespace LaOriginalBackend.Controllers.Inventario
             if (dto.PrecioVentaDefault < dto.PrecioCompraDefault)
                 return BadRequest("El precio de venta no puede ser menor al precio de compra.");
 
-            // Categoría tracked (posible actualización del Prefijo)
             var categoria = await _db.Categorias
                 .FirstOrDefaultAsync(c => c.Id == dto.CategoriaId && c.Activo);
             if (categoria is null) return BadRequest("Categoría inválida o inactiva.");
@@ -134,10 +144,7 @@ namespace LaOriginalBackend.Controllers.Inventario
                 .AnyAsync(p => p.Nombre.ToLower() == dto.Nombre.Trim().ToLower());
             if (nameExists) return Conflict(new { message = "Ya existe un producto con ese nombre." });
 
-            // Asegurar prefijo de 2 letras único por categoría
             var pref = await EnsureCategoriaPrefijoAsync(categoria);
-
-            // Generar código por categoría usando el prefijo de 2 letras
             var codigo = await GenerarCodigoAsync(dto.CategoriaId, pref);
 
             using var tx = await _db.Database.BeginTransactionAsync();
@@ -146,19 +153,17 @@ namespace LaOriginalBackend.Controllers.Inventario
             {
                 try
                 {
-                    // 1) Producto
                     var producto = new Producto
                     {
                         Nombre = dto.Nombre.Trim(),
-                        Codigo = codigo, // <-- Se guarda aquí
+                        Codigo = codigo,
                         Activo = dto.Activo,
                         CategoriaId = dto.CategoriaId,
                         FotoUrl = dto.FotoUrl
                     };
                     _db.Productos.Add(producto);
-                    await _db.SaveChangesAsync(); // <-- Persistido
+                    await _db.SaveChangesAsync();
 
-                    // 2) Presentación principal "Unidad"
                     var unidadMedidaId = await GetUnidadMedidaDefaultIdAsync();
                     if (unidadMedidaId == null)
                         return BadRequest("No hay Unidad de Medida por defecto. Crea una 'Unidad' o define un símbolo 'U'.");
@@ -177,7 +182,6 @@ namespace LaOriginalBackend.Controllers.Inventario
                     _db.Presentaciones.Add(principal);
                     await _db.SaveChangesAsync();
 
-                    // 3) Asociación al catálogo del proveedor
                     var precioLista = dto.PrecioCompraDefault;
                     var yaExiste = await _db.ProveedoresPresentaciones
                         .AnyAsync(x => x.ProveedorId == dto.ProveedorId && x.PresentacionId == principal.Id);
@@ -204,7 +208,6 @@ namespace LaOriginalBackend.Controllers.Inventario
                 {
                     if (intento == 0)
                     {
-                        // Reintento con nuevo correlativo (mismo prefijo de 2 letras)
                         codigo = await GenerarCodigoAsync(dto.CategoriaId, pref);
                         continue;
                     }
@@ -215,7 +218,7 @@ namespace LaOriginalBackend.Controllers.Inventario
             return Problem("No fue posible generar un código único para el producto.", statusCode: 500);
         }
 
-        // ===== ACTUALIZAR (Producto + precios opcionales de presentación principal) =====
+        // ===== ACTUALIZAR =====
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] ProductoUpdateDto dto)
         {
@@ -237,17 +240,11 @@ namespace LaOriginalBackend.Controllers.Inventario
             if (string.IsNullOrWhiteSpace(dto.FotoUrl))
                 return BadRequest("La imagen (FotoUrl) es obligatoria.");
 
-            // Datos del Producto
             entity.Nombre = dto.Nombre.Trim();
             entity.Activo = dto.Activo;
             entity.CategoriaId = dto.CategoriaId;
             entity.FotoUrl = dto.FotoUrl;
 
-            // (Opcional) Podrías regenerar el código si cambian de categoría y deseas que siga el prefijo
-            // var pref = await EnsureCategoriaPrefijoAsync(categoria);
-            // entity.Codigo = await GenerarCodigoAsync(dto.CategoriaId, pref);
-
-            // Precios de la Presentación principal (si vienen)
             if (dto.PrecioCompraDefault.HasValue || dto.PrecioVentaDefault.HasValue)
             {
                 var principal = entity.Presentaciones.FirstOrDefault(pr => pr.EsPrincipal);
@@ -320,7 +317,7 @@ namespace LaOriginalBackend.Controllers.Inventario
             return NoContent();
         }
 
-        // ===== ELIMINAR (con limpieza explícita de dependencias) =====
+        // ===== ELIMINAR =====
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -370,7 +367,7 @@ namespace LaOriginalBackend.Controllers.Inventario
             }
         }
 
-        // ===== SUBIR IMAGEN =====
+        // ===== SUBIR IMAGEN (carpeta EXTERNA mapeada como /uploads) =====
         [HttpPost("imagen")]
         [RequestSizeLimit(5_000_000)]
         public async Task<ActionResult<object>> UploadImagen(IFormFile? file)
@@ -380,23 +377,23 @@ namespace LaOriginalBackend.Controllers.Inventario
             var allowed = new[] { "image/jpeg", "image/png", "image/webp" };
             if (!allowed.Contains(file.ContentType)) return BadRequest("Formato no soportado (JPG, PNG, WEBP).");
 
-            var uploadsPath = Path.Combine(_env.WebRootPath ?? "wwwroot", "uploads", "productos");
-            Directory.CreateDirectory(uploadsPath);
+            var dir = Path.Combine(_uploadsRoot, "productos");      // => C:\LaOriginal\uploads\productos
+            Directory.CreateDirectory(dir);
 
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
             var name = $"{Guid.NewGuid():N}{ext}";
-            var fullPath = Path.Combine(uploadsPath, name);
+            var fullPath = Path.Combine(dir, name);
 
             await using (var fs = new FileStream(fullPath, FileMode.Create))
                 await file.CopyToAsync(fs);
 
-            var url = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/uploads/productos/{name}";
+            // URL ABSOLUTA hacia el host del API
+            var baseUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+            var url = $"{baseUrl}/uploads/productos/{name}";
             return Ok(new { url });
         }
 
         // ===== Helpers =====
-
-        // Garantiza Prefijo de 2 letras único por categoría y lo persiste
         private async Task<string> EnsureCategoriaPrefijoAsync(Categoria categoria)
         {
             var current = LettersUpper(categoria.Prefijo);
@@ -468,7 +465,6 @@ namespace LaOriginalBackend.Controllers.Inventario
             return candidate;
         }
 
-        // Genera código correlativo por categoría usando el prefijo de 2 letras (p.ej., CA01, CO02)
         private async Task<string> GenerarCodigoAsync(int categoriaId, string prefijo2)
         {
             var pref = LettersUpper(prefijo2);
@@ -489,7 +485,7 @@ namespace LaOriginalBackend.Controllers.Inventario
             }
             var next = max + 1;
 
-            var pad = next <= 99 ? 2 : 3; // 2 dígitos hasta 99, luego 3
+            var pad = next <= 99 ? 2 : 3;
             return $"{pref}{next.ToString().PadLeft(pad, '0')}";
         }
 
@@ -507,8 +503,6 @@ namespace LaOriginalBackend.Controllers.Inventario
 
             return um?.Id;
         }
-
-        // ======= Helpers de normalización/generación de prefijos (2 letras) =======
 
         private static string LettersUpper(string? s)
         {
